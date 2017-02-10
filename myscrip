@@ -12,20 +12,25 @@ iptables -P OUTPUT DROP
 #we're not a router
 iptables -P FORWARD DROP
 
-#INPUT
-iptables -A INPUT -p icmp -i eth0 --icmp-type echo-request -j ACCEPT
-iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 80 -j ACCEPT
-iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 443 -j ACCEPT
-iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 53 -j ACCEPT
-iptables -A INPUT -p udp -i eth0 --sport 53 -j ACCEPT
-iptables  -A INPUT -j LOG
 
-#OUTPUT
-iptables -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 80 -j ACCEPT
-iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 443 -j ACCEPT
-iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 53 -j ACCEPT
+#DNS
 iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -p udp -i eth0 --sport 53 -j ACCEPT
+iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 53 -j ACCEPT
+iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 53 -j ACCEPT
+
+#HTTP/HTTPS
+iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 80 -j ACCEPT
+iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 443 -j ACCEPT
+iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 443 -j ACCEPT
+
+#PING
+iptables -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A INPUT -p icmp -i eth0 --icmp-type echo-request -j ACCEPT
+
+#LOGGING
+iptables  -A INPUT -j LOG
 
 #update upgrade
 ## comment out the one not using
