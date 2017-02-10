@@ -1,0 +1,64 @@
+#!/bin/bash
+# hello!
+#change root passwd
+passwd root
+
+#flush iptables
+iptables -F
+
+#set policies
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+#we're not a router
+iptables -P FORWARD DROP
+
+#INPUT
+iptables -A INPUT -p icmp -i eth0 --icmp-type echo-request -j ACCEPT
+iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 80 -j ACCEPT
+iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 443 -j ACCEPT
+iptables -A INPUT -p tcp -i eth0 -m state --state ESTABLISHED --sport 53 -j ACCEPT
+iptables -A INPUT -p udp -i eth0 --sport 53 -j ACCEPT
+iptables  -A INPUT -j LOG
+
+#OUTPUT
+iptables -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 80 -j ACCEPT
+iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 443 -j ACCEPT
+iptables -A OUTPUT -p tcp -m state --state NEW,RELATED,ESTABLISHED --dport 53 -j ACCEPT
+iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+
+#update upgrade
+## comment out the one not using
+#debian/ubuntu uses apt-get. comment out dnf
+#fedora RHEL centos uses dnf or yum depending on version, comment out apt-get
+sudo apt-get -y  update
+sudo apt-get -y upgrade
+sudo yum update
+sudo yum upgrade
+sudo dnf update
+sudo dnf upgrade
+
+#initial base logging
+mkdir ~/logs
+mkdir ~/logs/base
+sudo cp -R /var/log/ ~/logs/base
+mv log base
+
+#watches like a loanshark
+#=== network connections
+gnome-terminal -e "watch -n 5  -d netstat -plunt"
+
+#== testing running two watches at the same time
+gnome-terminal -e "watch -n 30 -d md5sum /etc/shadow; cat /etc/shadow"
+gnome-terminal -e "watch -n 30 -d md5sum /etc/passwd; cat /etc/passwd | awk -F: /etc/passwd '($3 == 0){print}'"
+
+#=== watching services
+gnome-terminal -e "watch -n 10 -d service --status-all"
+
+#=== secondary log watch. this one's prob un needed as it changes a lot.
+gnome-terminal -e "watch -n 10 -d md5sum /var/log/"
+
+#=== differece between current logs and base log
+gnome-terminal -e "watch -n 10 -d diff -r /var/log ~/logs/base"
+
+gnome-terminal -e "watch -n 60 -d cat /etc/sudoers"
